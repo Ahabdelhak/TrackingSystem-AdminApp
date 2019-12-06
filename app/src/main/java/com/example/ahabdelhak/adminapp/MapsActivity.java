@@ -6,9 +6,11 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.os.Bundle;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -49,7 +51,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         double lat = Double.parseDouble(loc.lat);
                         double lng = Double.parseDouble(loc.lng);
                         LatLng location = new LatLng(lat,lng);
-                        googleMap.addMarker(new MarkerOptions().position(location).title(loc.email));
+                        googleMap.addMarker(new MarkerOptions().position(location).title(loc.email).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
+
+                        googleMap.moveCamera(CameraUpdateFactory.newLatLng(location));
+                        googleMap.animateCamera(CameraUpdateFactory.zoomTo(11));
                     }
                 }
             }
