@@ -1,4 +1,4 @@
-#Sat Dec 07 15:32:44 EET 2019
+#Mon Dec 09 16:10:25 EET 2019
 base.0=E\:\\1-Freelancing\\TrackingSystem\\TrakingApp_Admin\\app\\build\\intermediates\\dex\\debug\\mergeDexDebug\\out\\classes.dex
 path.0=classes.dex
 renamed.0=classes.dex
