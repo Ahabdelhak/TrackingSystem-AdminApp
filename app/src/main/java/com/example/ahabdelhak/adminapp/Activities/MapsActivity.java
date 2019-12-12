@@ -7,6 +7,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
+
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -37,25 +38,31 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleMap.OnMarkerClickListener, NavigationView.OnNavigationItemSelectedListener {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback,
+        LocationListener, GoogleMap.OnMarkerClickListener, NavigationView.OnNavigationItemSelectedListener {
 
     private GoogleMap mMap;
-    MarkerOptions markerOptions;
     Location currentLocation;
     FusedLocationProviderClient fusedLocationProviderClient;
     private static final int REQUEST_CODE = 101;
     DrawerLayout drawer;
+    MapActvity_fun mapActvity_fun;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //Display App GUI
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-        fetchLocation();
+
+        mapActvity_fun=new MapActvity_fun();
+
+        // Display Navigation UI
         NavigationDrawerView();
 
+        // Check Permission and access to location
+        LocationPermission();
     }
+
     //Navigation UI
     private void NavigationDrawerView() {
         drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -82,43 +89,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-
     }
-
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
-
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-            Toast.makeText(getApplicationContext(), "Home is clicked", Toast.LENGTH_SHORT).show();
-
-        } else if (id == R.id.nav_gallery) {
-            Toast.makeText(getApplicationContext(), "Gps is clicked", Toast.LENGTH_SHORT).show();
-
-        } else if (id == R.id.nav_slideshow) {
-            Toast.makeText(getApplicationContext(), "view Map is clicked", Toast.LENGTH_SHORT).show();
-
-        } else if (id == R.id.nav_manage) {
-            Toast.makeText(getApplicationContext(), "other is clicked", Toast.LENGTH_SHORT).show();
-
-        }
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.END);
-        return true;
-    }
-
-
     //Check Permission and access to location
-    private void fetchLocation() {
+    private void LocationPermission() {
         if (ActivityCompat.checkSelfPermission(
                 this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
                 this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_CODE);
             return;
         }
+        // get notified when the map is ready to be used.
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         Task<Location> task = fusedLocationProviderClient.getLastLocation();
         task.addOnSuccessListener(new OnSuccessListener<Location>() {
             @Override
@@ -133,58 +114,44 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
     }
+    //Refreshing buttonn
+    public void refresh(View view) {
+        mapActvity_fun.RefreshMap(this,mMap);
+        mapActvity_fun.GetCurrentLocations(mMap,currentLocation.getLatitude(),currentLocation.getLongitude());
+        mapActvity_fun.AddUsersMarkers(mMap);
+    }
+
+    @SuppressWarnings("StatementWithEmptyBody")
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+        // Handle navigation view item clicks here.
+        int id = item.getItemId();
+        if (id == R.id.nav_camera) {
+            // Handle the camera action
+            Toast.makeText(getApplicationContext(), "Home is clicked", Toast.LENGTH_SHORT).show();
+        } else if (id == R.id.nav_gallery) {
+            Toast.makeText(getApplicationContext(), "Gps is clicked", Toast.LENGTH_SHORT).show();
+
+        }else if (id == R.id.nav_slideshow) {
+            Toast.makeText(getApplicationContext(), "view Map is clicked", Toast.LENGTH_SHORT).show();
+
+        }else if (id == R.id.nav_manage) {
+            Toast.makeText(getApplicationContext(), "other is clicked", Toast.LENGTH_SHORT).show();
+        }
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.END);
+        return true;
+    }
 
     @Override
     public void onMapReady(final GoogleMap googleMap) {
         mMap = googleMap;
-        //Current Loc
-        CurrentLocationMarker(googleMap);
-        //Add Traking users Marker
-        TrackingUsersLocation(googleMap);
+        mapActvity_fun.GetCurrentLocations(googleMap,currentLocation.getLatitude(),currentLocation.getLongitude());
+        mapActvity_fun.AddUsersMarkers(googleMap);
     }
-
-    //Add Traking users Marker
-    public void TrackingUsersLocation(final GoogleMap googleMap){
-        DatabaseReference f_database = FirebaseDatabase.getInstance().getReference("Locations");
-        ValueEventListener listener = new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                    for(DataSnapshot snapshot:dataSnapshot.getChildren()){
-
-                        Locations loc = snapshot.getValue(Locations.class);
-
-                        double lat = Double.parseDouble(loc.lat);
-                        double lng = Double.parseDouble(loc.lng);
-                        LatLng location = new LatLng(lat,lng);
-                        googleMap.addMarker(new MarkerOptions().position(location).title(loc.email).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
-
-                    }
-                }
-            }
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        };
-        f_database.addListenerForSingleValueEvent(listener);
-
-    }
-    //get current Location
-    private void CurrentLocationMarker(GoogleMap googleMap) {
-        LatLng latLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-        markerOptions = new MarkerOptions().position(latLng).title("Me");
-        googleMap.addMarker(markerOptions);
-
-        googleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-        googleMap.animateCamera(CameraUpdateFactory.zoomTo(9));
-    }
-
     @Override
     public void onLocationChanged(Location location) {
-
     }
-
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
 
@@ -210,7 +177,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         switch (requestCode) {
             case REQUEST_CODE:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    fetchLocation();
+                    LocationPermission();
                 }
                 break;
         }
